@@ -1,0 +1,21 @@
+{
+  "name": "dynamo-crud",
+  "version": "1.0.0",
+  "description": "Node.js CRUD app with DynamoDB Local",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "create-table": "node createTable.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "aws-sdk": "^2.1693.0",
+    "body-parser": "^2.2.1",
+    "express": "^5.2.1",
+    "uuid": "^8.3.2"
+  }
+}
