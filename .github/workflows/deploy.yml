@@ -82,9 +82,9 @@ jobs:
             sudo yum clean all
             sudo yum makecache
 
-            # Install Node.js 16 from Amazon Linux Extras
-            sudo amazon-linux-extras enable nodejs16
-            sudo yum install -y nodejs
+            # Install Node.js 14 (stable for Amazon Linux 2)
+            sudo amazon-linux-extras enable nodejs14
+            sudo amazon-linux-extras install -y nodejs14
 
             # Verify
             node -v
