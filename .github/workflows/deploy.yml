@@ -102,14 +102,21 @@ jobs:
 
       # Step 8: Switch ALB traffic
       - name: Switch ALB traffic
-        run:  |
-          cat <<EOF > listener.json
+      
+
+      - name: Switch ALB traffic
+        shell: bash
+        run: |
+          LISTENER_ARN_CLEAN=$(echo "${{ secrets.LISTENER_ARN }}" | tr -d '\n\r')
+          DEPLOY_TARGET_CLEAN=$(echo "${{ env.DEPLOY_TARGET }}" | tr -d '\n\r')
+
+            cat <<EOF > listener.json
           {
-            "ListenerArn": "${{ secrets.LISTENER_ARN }}",
+            "ListenerArn": "$LISTENER_ARN_CLEAN",
             "DefaultActions": [
               {
                 "Type": "forward",
-                "TargetGroupArn": "${{ env.DEPLOY_TARGET }}"
+                "TargetGroupArn": "$DEPLOY_TARGET_CLEAN"
               }
             ]
           }
