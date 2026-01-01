@@ -78,9 +78,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Install Node.js and PM2 if missing
+            # Install Node.js 16 instead of 18
             if ! command -v node >/dev/null; then
-              curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+              curl -fsSL https://rpm.nodesource.com/setup_16.x | sudo bash -
               sudo yum install -y nodejs
             fi
             if ! command -v pm2 >/dev/null; then
