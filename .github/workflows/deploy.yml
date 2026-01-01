@@ -100,39 +100,6 @@ jobs:
             pm2 reload app || pm2 start app/app.js --name app
             pm2 save
 
-    # Step 7: Restart Node.js app on IDLE EC2
-      - name: Restart Node.js app
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ env.TARGET_EC2 }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            # Clean yum
-            sudo yum clean all
-            sudo yum makecache
-
-            # Install Node.js 14 from Amazon Linux Extras (safe)
-            sudo amazon-linux-extras enable nodejs14
-            sudo amazon-linux-extras install -y nodejs14
-
-            # Verify
-            node -v
-            npm -v
-
-            # Install pm2 globally
-            sudo npm install -g pm2
-
-            # Deploy app
-            cd /home/ec2-user/app
-            npm install
-
-            # Start / reload with pm2
-            pm2 reload app || pm2 start app/app.js --name app
-            pm2 save
-
-      
       - name: Debug DEPLOY_TARGET
         run: |
           echo "DEPLOY_TARGET = '${{ env.DEPLOY_TARGET }}'"
