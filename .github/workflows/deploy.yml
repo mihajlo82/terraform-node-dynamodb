@@ -11,17 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
+      # Step 1: Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js
+      # Step 2: Setup Node.js (for build / test if needed)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Step 3: Install dependencies
+      # Step 3: Install dependencies (optional for build/test)
       - name: Install dependencies
         run: npm install
 
@@ -58,7 +58,7 @@ jobs:
             echo "TARGET_EC2=$BLUE_EC2_IP" >> $GITHUB_ENV
           fi
 
-      # Step 6: Deploy to IDLE EC2
+      # Step 6: Deploy code to IDLE EC2
       - name: Deploy to IDLE EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -78,18 +78,23 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Install Node.js 18 LTS via NodeSource (Amazon Linux 2 compatible)
-            if ! command -v node >/dev/null; then
-              curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-              sudo yum install -y nodejs
-            fi
+            # Update yum and install Node.js 18 (works with Amazon Linux 2)
+            sudo yum clean all
+            sudo yum makecache
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs
 
             # Install pm2 globally if missing
             if ! command -v pm2 >/dev/null; then
               sudo npm install -g pm2
             fi
 
-            # Run app
+            # Check versions
+            node -v
+            npm -v
+            pm2 -v
+
+            # Deploy and start app
             cd /home/ec2-user/app
             npm install
             pm2 reload app || pm2 start app/index.js --name app --update-env
