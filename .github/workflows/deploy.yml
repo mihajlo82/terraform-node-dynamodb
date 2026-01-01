@@ -100,10 +100,7 @@ jobs:
             pm2 reload app || pm2 start app/index.js --name app --update-env
             pm2 status
 
-      # Step 8: Switch ALB traffic
-      - name: Switch ALB traffic
-      
-
+      # Step 8: Switch ALB traffic    
       - name: Switch ALB traffic
         shell: bash
         run: |
