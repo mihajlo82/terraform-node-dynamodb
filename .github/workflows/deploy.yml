@@ -43,6 +43,7 @@ jobs:
             echo "Deploying to BLUE"
             echo "DEPLOY_TARGET=$BLUE_TG_ARN" >> $GITHUB_ENV
             echo "TARGET_EC2=$BLUE_EC2_IP" >> $GITHUB_ENV
+          fi
 
       - name: Deploy to IDLE EC2
         uses: appleboy/scp-action@v0.1.4
