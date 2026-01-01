@@ -99,10 +99,10 @@ jobs:
             npm install
             pm2 reload app || pm2 start app/index.js --name app --update-env
             pm2 status
-            
+
       # Step 8: Switch ALB traffic
       - name: Switch ALB traffic
         run: |
           aws elbv2 modify-listener \
             --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions Type=forward,TargetGroupArn=${{ env.DEPLOY_TARGET }}
+            --default-actions '[{"Type": "forward", "TargetGroupArn": "'"${{ env.DEPLOY_TARGET }}"'"}]'
