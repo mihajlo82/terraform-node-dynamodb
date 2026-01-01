@@ -1,3 +1,137 @@
+# name: Blue-Green Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main   # Blue
+#       - dev    # Green
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # Step 1: Checkout repo
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       # Step 2: Setup Node.js locally (optional, for build/test)
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 14
+
+#       # Step 3: Install dependencies locally (optional for build/test)
+#       - name: Install dependencies
+#         run: npm install
+
+#       # Step 4: Configure AWS credentials
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: us-east-1
+
+#       # Step 5: Determine LIVE environment and set IDLE target
+#       - name: Determine IDLE EC2
+#         id: detect
+#         run: |
+#           BLUE_TG_ARN="${{ secrets.BLUE_TG_ARN }}"
+#           GREEN_TG_ARN="${{ secrets.GREEN_TG_ARN }}"
+#           LISTENER_ARN="${{ secrets.LISTENER_ARN }}"
+#           BLUE_EC2_IP="${{ secrets.BLUE_EC2_IP }}"
+#           GREEN_EC2_IP="${{ secrets.GREEN_EC2_IP }}"
+
+#           LIVE_TG=$(aws elbv2 describe-listeners \
+#             --listener-arns "$LISTENER_ARN" \
+#             --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn" \
+#             --output text)
+
+#           if [ "$LIVE_TG" = "$BLUE_TG_ARN" ]; then
+#             echo "Deploying to GREEN"
+#             echo "DEPLOY_TARGET=$GREEN_TG_ARN" >> $GITHUB_ENV
+#             echo "TARGET_EC2=$GREEN_EC2_IP" >> $GITHUB_ENV
+#           else
+#             echo "Deploying to BLUE"
+#             echo "DEPLOY_TARGET=$BLUE_TG_ARN" >> $GITHUB_ENV
+#             echo "TARGET_EC2=$BLUE_EC2_IP" >> $GITHUB_ENV
+#           fi
+
+#       # Step 6: Deploy code to IDLE EC2
+#       - name: Deploy to IDLE EC2
+#         uses: appleboy/scp-action@v0.1.4
+#         with:
+#           host: ${{ env.TARGET_EC2 }}
+#           username: ec2-user
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           port: 22
+#           source: "./*"
+#           target: "/home/ec2-user/app/"
+
+#       # Step 7: Restart Node.js app on IDLE EC2
+#       - name: Restart Node.js app
+#         uses: appleboy/ssh-action@v0.1.7
+#         with:
+#           host: ${{ env.TARGET_EC2 }}
+#           username: ec2-user
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           port: 22
+#           script: |
+#             # Update package info
+#             sudo yum clean all
+#             sudo yum makecache
+
+#             # Enable Node.js 14
+#             sudo amazon-linux-extras enable nodejs14 -y
+#             sudo yum install -y nodejs
+
+#             # Verify Node.js & npm
+#             node -v
+#             npm -v
+
+#             # Install pm2 globally
+#             sudo npm install -g pm2
+
+#             # Deploy app
+#             cd /home/ec2-user/app
+#             npm install
+
+#             # Reload or start app using pm2
+#             pm2 reload app || pm2 start app/app.js --name app
+#             pm2 save
+
+#       # Step 8: Debug DEPLOY_TARGET
+#       - name: Debug DEPLOY_TARGET
+#         run: |
+#           echo "DEPLOY_TARGET = '${{ env.DEPLOY_TARGET }}'"
+#           echo "BLUE_TG_ARN  = '${{ secrets.BLUE_TG_ARN }}'"
+#           echo "GREEN_TG_ARN = '${{ secrets.GREEN_TG_ARN }}'"
+
+#       # Step 9: Switch ALB traffic    
+#       - name: Switch ALB traffic
+#         shell: bash
+#         run: |
+#           LISTENER_ARN_CLEAN=$(echo "${{ secrets.LISTENER_ARN }}" | tr -d '\n\r')
+#           DEPLOY_TARGET_CLEAN=$(echo "${{ env.DEPLOY_TARGET }}" | tr -d '\n\r')
+
+#           cat <<EOF > listener.json
+#           {
+#             "ListenerArn": "$LISTENER_ARN_CLEAN",
+#             "DefaultActions": [
+#               {
+#                 "Type": "forward",
+#                 "TargetGroupArn": "$DEPLOY_TARGET_CLEAN"
+#               }
+#             ]
+#           }
+#           EOF
+
+#           echo "==== listener.json ===="
+#           cat listener.json
+#           echo "======================="
+
+#           aws elbv2 modify-listener --cli-input-json file://listener.json
 name: Blue-Green Deploy
 
 on:
@@ -11,21 +145,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
+      # Step 1: Checkout repo (needed for SCP)
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js locally (optional, for build/test)
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-
-      # Step 3: Install dependencies locally (optional for build/test)
-      - name: Install dependencies
-        run: npm install
-
-      # Step 4: Configure AWS credentials
+      # Step 2: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -33,7 +157,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 5: Determine LIVE environment and set IDLE target
+      # Step 3: Determine LIVE environment and set IDLE target
       - name: Determine IDLE EC2
         id: detect
         run: |
@@ -58,7 +182,7 @@ jobs:
             echo "TARGET_EC2=$BLUE_EC2_IP" >> $GITHUB_ENV
           fi
 
-      # Step 6: Deploy code to IDLE EC2
+      # Step 4: Deploy code to IDLE EC2 via SCP
       - name: Deploy to IDLE EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -69,7 +193,7 @@ jobs:
           source: "./*"
           target: "/home/ec2-user/app/"
 
-      # Step 7: Restart Node.js app on IDLE EC2
+      # Step 5: Restart Node.js app on IDLE EC2
       - name: Restart Node.js app
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -78,37 +202,35 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Update package info
-            sudo yum clean all
-            sudo yum makecache
+            set -e  # exit immediately if any command fails
 
-            # Enable Node.js 14
-            sudo amazon-linux-extras enable nodejs14 -y
-            sudo yum install -y nodejs
+            # Navigate to app directory
+            cd /home/ec2-user/app
 
-            # Verify Node.js & npm
+            # Verify Node.js & npm (Node 14 assumed installed)
             node -v
             npm -v
 
-            # Install pm2 globally
-            sudo npm install -g pm2
+            # Install pm2 if not installed
+            if ! command -v pm2 &> /dev/null; then
+              sudo npm install -g pm2
+            fi
 
-            # Deploy app
-            cd /home/ec2-user/app
-            npm install
+            # Install app dependencies
+            npm ci
 
             # Reload or start app using pm2
             pm2 reload app || pm2 start app/app.js --name app
             pm2 save
 
-      # Step 8: Debug DEPLOY_TARGET
+      # Step 6: Debug DEPLOY_TARGET
       - name: Debug DEPLOY_TARGET
         run: |
           echo "DEPLOY_TARGET = '${{ env.DEPLOY_TARGET }}'"
           echo "BLUE_TG_ARN  = '${{ secrets.BLUE_TG_ARN }}'"
           echo "GREEN_TG_ARN = '${{ secrets.GREEN_TG_ARN }}'"
 
-      # Step 9: Switch ALB traffic    
+      # Step 7: Switch ALB traffic    
       - name: Switch ALB traffic
         shell: bash
         run: |
