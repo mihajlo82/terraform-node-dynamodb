@@ -45,6 +45,11 @@ app.get('/users', async (req, res) => {
   }
 });
 
+
+// READ all users
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
+
 // READ one user
 app.get('/users/:id', async (req, res) => {
   const params = {
