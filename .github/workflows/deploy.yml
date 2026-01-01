@@ -95,15 +95,15 @@ jobs:
             pm2 -v
 
             # Deploy and start app
-            cd /home/ec2-user/app
+            cd /home/ec2-user/
             npm install
             pm2 reload app || pm2 start app/index.js --name app --update-env
             pm2 status
 
       # Step 8: Switch ALB traffic
       - name: Switch ALB traffic
-        run: |
-          cat > listener.json <<EOF
+        run:  |
+          cat <<EOF > listener.json
           {
             "ListenerArn": "${{ secrets.LISTENER_ARN }}",
             "DefaultActions": [
@@ -115,4 +115,8 @@ jobs:
           }
           EOF
 
-          aws elbv2 modify-listener --cli-input-json file://listener.json
+            echo "==== listener.json ===="
+            cat listener.json
+            echo "======================="
+
+            aws elbv2 modify-listener --cli-input-json file://listener.json
