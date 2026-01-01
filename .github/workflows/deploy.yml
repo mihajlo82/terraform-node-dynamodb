@@ -98,16 +98,15 @@ jobs:
       # Step 8: Switch ALB traffic
       - name: Switch ALB traffic
         run: |
-          # Create a properly formatted JSON file for modify-listener
-          cat > actions.json <<EOF
-          [
-            {
-              "Type": "forward",
-              "TargetGroupArn": "${{ env.DEPLOY_TARGET }}"
-            }
-          ]
-          EOF
+            # Use proper JSON without heredoc indentation and with shell interpolation
+            echo '[
+              {
+                "Type": "forward",
+                "TargetGroupArn": "'"${DEPLOY_TARGET}"'"
+              }
+            ]' > actions.json
 
-          aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions file://actions.json
+            aws elbv2 modify-listener \
+              --listener-arn ${{ secrets.LISTENER_ARN }} \
+              --default-actions file://actions.json
+
