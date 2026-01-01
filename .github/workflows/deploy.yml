@@ -100,6 +100,13 @@ jobs:
             pm2 reload app || pm2 start app/index.js --name app --update-env
             pm2 status
 
+      
+      - name: Debug DEPLOY_TARGET
+        run: |
+          echo "DEPLOY_TARGET = '${{ env.DEPLOY_TARGET }}'"
+          echo "BLUE_TG_ARN  = '${{ secrets.BLUE_TG_ARN }}'"
+          echo "GREEN_TG_ARN = '${{ secrets.GREEN_TG_ARN }}'"
+
       # Step 8: Switch ALB traffic    
       - name: Switch ALB traffic
         shell: bash
