@@ -220,7 +220,7 @@ jobs:
             npm ci
 
             # Reload or start app using pm2
-            pm2 reload app || pm2 start app/app.js --name app
+            pm2 reload app || pm2 start app.js --name app
             pm2 save
 
       # Step 6: Debug DEPLOY_TARGET
