@@ -15,13 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js (for build / test if needed)
+      # Step 2: Setup Node.js locally (optional for build/test)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # Step 3: Install dependencies (optional for build/test)
+      # Step 3: Install dependencies locally (optional)
       - name: Install dependencies
         run: npm install
 
@@ -69,8 +69,8 @@ jobs:
           source: "./*"
           target: "/home/ec2-user/app/"
 
-      # Step 7: Restart Node.js app on IDLE EC2
-      - name: Restart Node.js app
+      # Step 7: Install Node.js, pm2, and restart app on IDLE EC2
+      - name: Restart Node.js app on IDLE EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ env.TARGET_EC2 }}
@@ -78,19 +78,19 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Clean yum
+            # -----------------------------
+            # Clean yum cache
             sudo yum clean all
             sudo yum makecache
 
-            # Clean dnf cache
-            sudo dnf clean all
-            sudo dnf makecache
+            # Install curl if missing
+            sudo yum install -y curl
 
-            # Install Node.js 18 (default modules)
-            sudo dnf module enable nodejs:18 -y
-            sudo dnf install -y nodejs
+            # Install Node.js 18 via NodeSource
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+            sudo yum install -y nodejs
 
-            # Verify installation
+            # Verify Node.js & npm
             node -v
             npm -v
 
@@ -101,16 +101,18 @@ jobs:
             cd /home/ec2-user/app
             npm install
 
+            # Reload or start app using pm2
             pm2 reload app || pm2 start app/app.js --name app
             pm2 save
 
+      # Step 8: Debug DEPLOY_TARGET
       - name: Debug DEPLOY_TARGET
         run: |
           echo "DEPLOY_TARGET = '${{ env.DEPLOY_TARGET }}'"
           echo "BLUE_TG_ARN  = '${{ secrets.BLUE_TG_ARN }}'"
           echo "GREEN_TG_ARN = '${{ secrets.GREEN_TG_ARN }}'"
 
-      # Step 8: Switch ALB traffic    
+      # Step 9: Switch ALB traffic
       - name: Switch ALB traffic
         shell: bash
         run: |
