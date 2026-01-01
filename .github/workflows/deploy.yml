@@ -15,13 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js locally (for build/test if needed)
+      # Step 2: Setup Node.js locally (optional, for build/test)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 14
 
-      # Step 3: Install dependencies (optional)
+      # Step 3: Install dependencies locally (optional for build/test)
       - name: Install dependencies
         run: npm install
 
@@ -44,7 +44,7 @@ jobs:
           GREEN_EC2_IP="${{ secrets.GREEN_EC2_IP }}"
 
           LIVE_TG=$(aws elbv2 describe-listeners \
-            --listener-arns $LISTENER_ARN \
+            --listener-arns "$LISTENER_ARN" \
             --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[0].TargetGroupArn" \
             --output text)
 
@@ -58,7 +58,7 @@ jobs:
             echo "TARGET_EC2=$BLUE_EC2_IP" >> $GITHUB_ENV
           fi
 
-      # Step 6: Deploy code to IDLE EC2 using scp
+      # Step 6: Deploy code to IDLE EC2
       - name: Deploy to IDLE EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -69,7 +69,7 @@ jobs:
           source: "./*"
           target: "/home/ec2-user/app/"
 
-      # Step 7: Install Node.js via nvm & restart app
+      # Step 7: Restart Node.js app on IDLE EC2
       - name: Restart Node.js app
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -78,24 +78,20 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Install prerequisites
-            sudo yum install -y git curl
+            # Update package info
+            sudo yum clean all
+            sudo yum makecache
 
-            # Install NVM
-            export NVM_DIR="$HOME/.nvm"
-            if [ ! -d "$NVM_DIR" ]; then
-              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.6/install.sh | bash
-            fi
-            source "$NVM_DIR/nvm.sh"
+            # Enable Node.js 14
+            sudo amazon-linux-extras enable nodejs14 -y
+            sudo yum install -y nodejs
 
-            # Install Node.js 18 via nvm
-            nvm install 18
-            nvm use 18
+            # Verify Node.js & npm
             node -v
             npm -v
 
             # Install pm2 globally
-            npm install -g pm2
+            sudo npm install -g pm2
 
             # Deploy app
             cd /home/ec2-user/app
