@@ -104,5 +104,5 @@ jobs:
       - name: Switch ALB traffic
         run: |
           aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions '[{"Type": "forward","TargetGroupArn":"'"${{ env.DEPLOY_TARGET }}"'"}]'
+                --listener-arn ${{ secrets.LISTENER_ARN }} \
+                --default-actions '[{"Type":"forward","TargetGroupArn":"'"${{ env.DEPLOY_TARGET }}"'"}]'
