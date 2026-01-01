@@ -4,7 +4,7 @@ resource "aws_instance" "blue" {
   subnet_id              = aws_subnet.public_a.id
   vpc_security_group_ids = [aws_security_group.ec2.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name               = "blue-kpair" # Replace with your key
+  key_name               = "shared-bg-kpair" # Replace with your key
 
   tags = {
     Name = "${var.project_name}-blue"
@@ -21,7 +21,7 @@ resource "aws_instance" "green" {
   subnet_id              = aws_subnet.public_b.id
   vpc_security_group_ids = [aws_security_group.ec2.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name               = "green-kpair"
+  key_name               = "shared-bg-kpair"
 
   tags = {
     Name = "${var.project_name}-green"
