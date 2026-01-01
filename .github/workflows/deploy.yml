@@ -110,7 +110,7 @@ jobs:
           LISTENER_ARN_CLEAN=$(echo "${{ secrets.LISTENER_ARN }}" | tr -d '\n\r')
           DEPLOY_TARGET_CLEAN=$(echo "${{ env.DEPLOY_TARGET }}" | tr -d '\n\r')
 
-            cat <<EOF > listener.json
+          cat <<EOF > listener.json
           {
             "ListenerArn": "$LISTENER_ARN_CLEAN",
             "DefaultActions": [
@@ -122,8 +122,8 @@ jobs:
           }
           EOF
 
-            echo "==== listener.json ===="
-            cat listener.json
-            echo "======================="
+          echo "==== listener.json ===="
+          cat listener.json
+          echo "======================="
 
-            aws elbv2 modify-listener --cli-input-json file://listener.json
+          aws elbv2 modify-listener --cli-input-json file://listener.json
