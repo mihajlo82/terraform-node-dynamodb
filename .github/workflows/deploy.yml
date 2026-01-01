@@ -217,7 +217,7 @@ jobs:
             fi
 
             # Install app dependencies
-            npm ci
+            npm install
 
             # Reload or start app using pm2
             pm2 reload app || pm2 start app.js --name app
