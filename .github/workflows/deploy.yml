@@ -98,15 +98,6 @@ jobs:
       # Step 8: Switch ALB traffic
       - name: Switch ALB traffic
         run: |
-            # Use proper JSON without heredoc indentation and with shell interpolation
-            echo '[
-              {
-                "Type": "forward",
-                "TargetGroupArn": "'"${DEPLOY_TARGET}"'"
-              }
-            ]' > actions.json
-
-            aws elbv2 modify-listener \
-              --listener-arn ${{ secrets.LISTENER_ARN }} \
-              --default-actions file://actions.json
-
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.LISTENER_ARN }} \
+            --default-actions '[{"Type": "forward","TargetGroupArn":"'"${{ env.DEPLOY_TARGET }}"'"}]'
